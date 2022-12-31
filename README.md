@@ -2,7 +2,7 @@
 
 Rozdungenlib is a library for generating simple dungeons. Currently, the dungeons consist of empty chambers connected by corridors. Two generation modes are available: 
 
-```rust
+```
 DungeonType::Basement and DungeonType::SeparateRooms.
 ``` 
 
