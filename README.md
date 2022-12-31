@@ -13,7 +13,7 @@ They give slightly different dungeon schemas.
 
 This library can be used in games based on the dungeons generated content like rougelikes or in any other applications where such mazes are needed.
 
-## Uses
+## Use
 
 Code usage example:
 
@@ -43,7 +43,7 @@ Code usage example:
     //Get number of generated rooms
     let count = dungeon.get_rooms_number();
 
-    //Get room woth index 2
+    //Get room with index 2
     let room = dungeon.rooms[2];
 
     //Get corridors connected with room of index 2
