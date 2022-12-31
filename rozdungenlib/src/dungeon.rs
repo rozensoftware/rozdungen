@@ -3,6 +3,13 @@ use crate::corridor::Corridor;
 use rand::thread_rng;
 use rand::Rng;
 
+#[derive(PartialEq)]
+pub enum DungeonType
+{
+    Basement,       //Like one big room with many walls
+    SeparateRooms   //Classic dunegon with separte rooms connected with corridors
+}
+
 #[derive(Debug)]
 pub struct Dungeon<'a>
 {
@@ -91,7 +98,7 @@ impl<'a> Dungeon<'a>
     /// * 'max_dungeon_height' - Max. dungeon height in internal units
     /// * 'max_room_width' - Max. room width in internal units
     /// * 'max_room_height' - Max room height in internal units
-    pub fn generate(&'a mut self, max_rooms: u16, max_dungeon_width: u16, max_dungeon_height: u16,
+    pub fn generate(&'a mut self, max_rooms: u16, dungeon_type: DungeonType, max_dungeon_width: u16, max_dungeon_height: u16,
         max_room_width: u16, max_room_height: u16) -> Result<&Dungeon<'a>, String>
     {
         if max_rooms == 0
@@ -119,9 +126,19 @@ impl<'a> Dungeon<'a>
                 let w: u16 = rng.gen_range(2..max_room_width);
                 let h: u16 = rng.gen_range(2..max_room_height);
 
-                let r = Room::new(max_room_id, x, y, w, h);
+                const ROOM_SPACE: i16 = 3;
 
-                if self.is_intersect_with_another_room(&r) == false
+                let r = Room::new(max_room_id, x, y, w, h);
+                let r2 = if dungeon_type == DungeonType::SeparateRooms && x as i16 - ROOM_SPACE >= 0 && y as i16 - ROOM_SPACE >= 0
+                {
+                    Room::new(max_room_id, x - ROOM_SPACE as u16, y - ROOM_SPACE as u16, w + 3, h + 3)
+                }
+                else
+                {
+                    r
+                };    
+
+                if self.is_intersect_with_another_room(&r2) == false
                 {
                     self.rooms.push(r);
                     max_room_id += 1;                            
@@ -140,11 +157,9 @@ impl<'a> Dungeon<'a>
             let rooms_array: &Vec<Room>= &self.rooms;
             let actual_rooms_size = self.get_rooms_number();
 
-            rooms_array.into_iter().for_each(|r| {
-                let number_of_corridors = rng.gen_range(1..=2);
-
-                for _ in 0..number_of_corridors
-                {
+            if dungeon_type == DungeonType::Basement
+            {
+                rooms_array.into_iter().for_each(|r| {
                     let mut idx: usize;
 
                     loop 
@@ -158,9 +173,23 @@ impl<'a> Dungeon<'a>
     
                     let corridor = Corridor::new(max_corridor_id, r, &self.rooms[idx]);
                     self.corridors.push(corridor);
-                    max_corridor_id += 1;
+                    max_corridor_id += 1;    
+                });
+            }
+            else if dungeon_type == DungeonType::SeparateRooms
+            {
+                let rooms_number = rooms_array.len();
+
+                for i in 0..rooms_number - 1
+                {
+                    let r1 = &self.rooms[i];
+                    let r2 = &self.rooms[i + 1];
+
+                    let corridor = Corridor::new(max_corridor_id, r1, r2);
+                    self.corridors.push(corridor);
+                    max_corridor_id += 1;    
                 }
-            });
+            }
         }
 
         Ok(self)
@@ -184,6 +213,7 @@ mod tests
         let mut dungeon = Dungeon::new();
         let res = dungeon.generate(
             MAX_ROOMS, 
+            DungeonType::Basement,
             MAX_DUNGEON_WIDTH, 
             MAX_DUNGEON_HEIGHT, MAX_ROOM_WIDTH, 
             MAX_ROOM_HEIGHT);
@@ -212,7 +242,13 @@ mod tests
     fn create_dungeon_fail_test()
     {
         let mut dungeon = Dungeon::new();
-        let res = dungeon.generate(10, 100, 10, 10, 10);
+        let res = dungeon.generate(
+            10, 
+            DungeonType::Basement,
+            100, 
+            10,
+            10, 
+            10);
         match res
         {
             Ok(_) =>

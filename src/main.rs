@@ -20,9 +20,9 @@ const WINDOW_TITLE: &str = GAME_ID;
 const WINDOW_WIDTH: f32 = 800.;
 const WINDOW_HEIGHT: f32 = 800.;
 const TILE_SIZE: u16 = 32;
-const MAX_ROOM_WIDTH: u16 = 3;
-const MAX_ROOM_HEIGHT: u16 = 3;
-const MAX_ROOMS_TO_GENERATE: u16 = 8;
+const MAX_ROOM_WIDTH: u16 = 4;
+const MAX_ROOM_HEIGHT: u16 = 4;
+const MAX_ROOMS_TO_GENERATE: u16 = 5;
 const TILE_EMPTY:u8 = 0;
 const TILE_WALL:u8 = 1;
 const TILE_DUMMY:u8 = 2;
@@ -306,7 +306,7 @@ pub fn main() -> GameResult
 
     let mut d = Dungeon::new();
 
-    let dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, 
+    let dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, rozdungenlib::dungeon::DungeonType::SeparateRooms,
         WINDOW_WIDTH as u16 / TILE_SIZE, WINDOW_HEIGHT as u16 / TILE_SIZE, 
         MAX_ROOM_WIDTH, MAX_ROOM_HEIGHT)
     {
