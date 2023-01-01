@@ -1,7 +1,7 @@
 # Rozdungen
 
-![dungeon pic 1](https://github.com/rozensoftware/rozdungen/dungeon1.png)
-![dungeon pic 2](https://github.com/rozensoftware/rozdungen/dungeons.png)
+![dungeon pic 1](https://github.com/rozensoftware/rozdungen/blob/master/dungeon.png)
+![dungeon pic 2](https://github.com/rozensoftware/rozdungen/blob/master/dungeon2.png)
 
 Rozdungenlib is a library for generating simple dungeons. Currently, the dungeons consist of empty chambers connected by corridors. Two generation modes are available: 
 
