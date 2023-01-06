@@ -28,7 +28,7 @@ struct MainState
 
 impl MainState
 {
-    fn new(ctx: &mut Context, d: &Dungeon) -> GameResult<MainState> 
+    fn new(ctx: &mut Context, d: &mut Dungeon) -> GameResult<MainState> 
     {
         let image = Image::from_path(ctx, "/wall.png")?;
         let mut inst = graphics::InstanceArray::new(ctx, image);
@@ -37,7 +37,7 @@ impl MainState
         let map_height = WINDOW_HEIGHT as usize / TILE_SIZE as usize;
 
         let mut dm = DungeonMap::new(map_width, map_height);
-        let map = dm.create_map(&d);
+        let map = dm.create_map(d);
 
         self::MainState::create_instances_from_map(&mut inst, map);
 
@@ -123,7 +123,7 @@ pub fn main() -> GameResult
 
     let mut d = Dungeon::new();
 
-    let dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, rozdungenlib::dungeon::DungeonType::Basement,
+    let dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, rozdungenlib::dungeon::DungeonType::SeparateRooms,
         WINDOW_WIDTH as u16 / TILE_SIZE, WINDOW_HEIGHT as u16 / TILE_SIZE, 
         MAX_ROOM_WIDTH, MAX_ROOM_HEIGHT)
     {
@@ -132,7 +132,7 @@ pub fn main() -> GameResult
     };
 
     let (mut context, event_loop) = context_builder.build()?;
-    let state = MainState::new(&mut context, &dungeon).unwrap();
+    let state = MainState::new(&mut context, dungeon).unwrap();
 
     event::run(context, event_loop, state)    
 }
