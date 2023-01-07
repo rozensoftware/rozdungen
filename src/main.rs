@@ -55,12 +55,10 @@ impl MainState
 
     fn create_instances_from_map(inst: &mut graphics::InstanceArray, map: &Vec<Vec<u8>>)
     {
-        for y in 0..WINDOW_HEIGHT as usize / TILE_SIZE as usize
-        {
+        (0..WINDOW_HEIGHT as usize / TILE_SIZE as usize).for_each(|y| {
             let tile_y = y * TILE_SIZE as usize;
 
-            for x in 0..WINDOW_WIDTH as usize / TILE_SIZE as usize
-            {
+            (0..WINDOW_WIDTH as usize / TILE_SIZE as usize).for_each(|x| {
                 let tile_x = x * TILE_SIZE as usize;
 
                 if map[x][y] == DungeonTile::TileWall as u8
@@ -70,20 +68,18 @@ impl MainState
                     .scale(Vec2::new(1.0, 1.0))
                     .rotation(0.0));  
                 }
-            }
-        }
+            });
+        });
     }
 
     pub fn draw_doors(&self, canvas: &mut Canvas)
     {
         let color = Color::from((255, 255, 255, 255));
 
-        for y in 0..WINDOW_HEIGHT as usize / TILE_SIZE as usize
-        {
+        (0..WINDOW_HEIGHT as usize / TILE_SIZE as usize).for_each(|y| {
             let tile_y = y * TILE_SIZE as usize;
 
-            for x in 0..WINDOW_WIDTH as usize / TILE_SIZE as usize
-            {
+            (0..WINDOW_WIDTH as usize / TILE_SIZE as usize).for_each(|x| {
                 let tile_x = x * TILE_SIZE as usize;
                 let tile = self.map[x][y];
 
@@ -99,8 +95,8 @@ impl MainState
                         .dest(Vec2::new(tile_x as f32, tile_y as f32))
                         .color(color));                
                 }
-            }
-        }
+            });
+        });
     }
 }
 

@@ -25,13 +25,11 @@ impl DungeonMap
     {
         let mut m:Vec<Vec<u8>> = vec![vec![0; width]; height];
 
-        for y in 0..height
-        {
-            for x in 0..width
-            {
+        (0..height).for_each(|y| {
+            (0..width).for_each(|x| {
                 m[x][y] = DungeonTile::TileWall as u8;
-            }
-        }
+            });
+        });
 
         Self 
         {
@@ -249,26 +247,22 @@ impl DungeonMap
 
     fn remove_redundant_walls(&mut self)
     {
-        for y in 0..self.map_height as isize
-        {
-            for x in 0..self.map_width as isize
-            {
+        (0..self.map_height as isize).for_each(|y| {
+            (0..self.map_width as isize).for_each(|x| {
                 if self.has_walls_around(x, y) == true
                 {
                     self.map[x as usize][y as usize] = DungeonTile::TileDummy as u8;
                 }
-            }
-        }
-        for y in 0..self.map_height
-        {
-            for x in 0..self.map_width
-            {
+            });
+        });
+        (0..self.map_height).for_each(|y| {
+            (0..self.map_width).for_each(|x| {
                 if self.map[x][y] == DungeonTile::TileDummy as u8
                 {
                     self.map[x][y] = DungeonTile::TileEmpty as u8;
                 }
-            }
-        }
+            });
+        });
     }
 
     fn count_floors_around_door(&self, x: isize, y: isize) -> u8
@@ -313,12 +307,10 @@ impl DungeonMap
 
     fn remove_not_useful_doors(&mut self)
     {
-        const MAX_FLOOR_AROUND_DOOR: u8 = 3;
+        const MAX_FLOOR_AROUND_DOOR: u8 = 2;
 
-        for y in 0..self.map_height
-        {
-            for x in 0..self.map_width
-            {
+        (0..self.map_height).for_each(|y| {
+            (0..self.map_width).for_each(|x| {
                 let tile = self.map[x][y];
 
                 if tile == DungeonTile::TileClosedDoor as u8
@@ -328,8 +320,8 @@ impl DungeonMap
                         self.map[x][y] = DungeonTile::TileEmpty as u8;
                     }
                 }
-            }
-        }
+            });
+        });
     }
 
     pub fn create_map(&mut self, d: &Dungeon) -> &Vec<Vec<u8>>
