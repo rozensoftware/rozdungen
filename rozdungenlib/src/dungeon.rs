@@ -181,15 +181,14 @@ impl Dungeon
             {
                 let rooms_number = rooms_array.len();
 
-                for i in 0..rooms_number - 1
-                {
+                (0..rooms_number - 1).for_each(|i| {
                     let r1 = self.rooms[i];
                     let r2 = self.rooms[i + 1];
 
                     let corridor = Corridor::new(max_corridor_id, r1, r2, None, None);
                     self.corridors.push(corridor);
                     max_corridor_id += 1;    
-                }
+                });
             }
         }
 
@@ -207,11 +206,10 @@ impl Dungeon
         let mut door_id = 0;
         let mut rng = thread_rng();
         
-        const DOOR_CREATION_CHANCE: u8 = 50;
-        const DOORS_ON_BOTH_SIDES_CHANCE: u8 = 25;
+        const DOOR_CREATION_CHANCE: u8 = 70;
+        const DOORS_ON_BOTH_SIDES_CHANCE: u8 = 30;
 
-        for c in &mut self.corridors
-        {
+        self.corridors.iter_mut().for_each(|c| {
             if rng.gen_range(1..=100) <= DOOR_CREATION_CHANCE
             {
                 let d1 = Door{id: door_id, locked: false, open: false};
@@ -226,7 +224,7 @@ impl Dungeon
                 door_id += 1;
                 c.to_room_door = Some(d1);
             }
-        }
+        });
 
         Ok(())
     }
