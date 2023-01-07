@@ -63,6 +63,6 @@ The library will be expanded in future. The plan is to add some of the following
 
 - Interior decoration of chambers
 - Monsters
-- Doors and keys
+- keys
 - Treasures
 - Entering and exiting the dungeon

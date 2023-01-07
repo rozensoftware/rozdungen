@@ -1,6 +1,6 @@
 use crate::{room::Room, door::Door};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Corridor
 {
     pub id: usize,
