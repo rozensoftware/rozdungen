@@ -1,5 +1,6 @@
-use std::env;
+use std::{env, rc::Rc};
 use std::path::PathBuf;
+use ggez::graphics::{Canvas, Color};
 use rozdungenlib::{dungeon::Dungeon, dungeonmap::{DungeonMap, DungeonTile}};
 use ggez::{
     event,  
@@ -17,13 +18,16 @@ const WINDOW_TITLE: &str = GAME_ID;
 const WINDOW_WIDTH: f32 = 800.;
 const WINDOW_HEIGHT: f32 = 800.;
 const TILE_SIZE: u16 = 32;
-const MAX_ROOM_WIDTH: u16 = 4;
+const MAX_ROOM_WIDTH: u16 = 5;
 const MAX_ROOM_HEIGHT: u16 = 4;
-const MAX_ROOMS_TO_GENERATE: u16 = 5;
+const MAX_ROOMS_TO_GENERATE: u16 = 6;
 
 struct MainState     
 {
     instances: graphics::InstanceArray,
+    map: Rc<Vec<Vec<u8>>>,
+    open_door_image: graphics::Image,
+    closed_door_image: graphics::Image,
 }
 
 impl MainState
@@ -43,6 +47,9 @@ impl MainState
 
         Ok(MainState {
             instances: inst,
+            map: Rc::new(map.clone()),
+            open_door_image: graphics::Image::from_path(ctx, "/door_open.png")?,
+            closed_door_image: graphics::Image::from_path(ctx, "/door_closed.png")?,
         })
     }
 
@@ -55,6 +62,7 @@ impl MainState
             for x in 0..WINDOW_WIDTH as usize / TILE_SIZE as usize
             {
                 let tile_x = x * TILE_SIZE as usize;
+
                 if map[x][y] == DungeonTile::TileWall as u8
                 {
                     inst.push(DrawParam::new()
@@ -66,6 +74,34 @@ impl MainState
         }
     }
 
+    pub fn draw_doors(&self, canvas: &mut Canvas)
+    {
+        let color = Color::from((255, 255, 255, 255));
+
+        for y in 0..WINDOW_HEIGHT as usize / TILE_SIZE as usize
+        {
+            let tile_y = y * TILE_SIZE as usize;
+
+            for x in 0..WINDOW_WIDTH as usize / TILE_SIZE as usize
+            {
+                let tile_x = x * TILE_SIZE as usize;
+                let tile = self.map[x][y];
+
+                if tile == DungeonTile::TileOpenDoor as u8
+                {
+                    canvas.draw(&self.open_door_image, DrawParam::new()
+                        .dest(Vec2::new(tile_x as f32, tile_y as f32))
+                        .color(color));                
+                }
+                else if tile == DungeonTile::TileClosedDoor as u8
+                {
+                    canvas.draw(&self.closed_door_image, DrawParam::new()
+                        .dest(Vec2::new(tile_x as f32, tile_y as f32))
+                        .color(color));                
+                }
+            }
+        }
+    }
 }
 
 impl event::EventHandler<ggez::GameError> for MainState
@@ -81,6 +117,8 @@ impl event::EventHandler<ggez::GameError> for MainState
             graphics::Canvas::from_frame(ctx, graphics::Color::from([0.1, 0.2, 0.3, 1.0]));
 
         canvas.draw(&self.instances, DrawParam::new().dest(Vec2::new(0.0, 0.0)));
+
+        self.draw_doors(&mut canvas);
 
         canvas.finish(ctx)?;
 
@@ -130,6 +168,8 @@ pub fn main() -> GameResult
         Ok(x) => x,
         Err(y) => panic!("{}", y)
     };
+
+    dungeon.add_doors().unwrap();
 
     let (mut context, event_loop) = context_builder.build()?;
     let state = MainState::new(&mut context, dungeon).unwrap();

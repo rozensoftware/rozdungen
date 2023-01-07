@@ -1,14 +1,17 @@
 use rand::{thread_rng, Rng};
 
-use crate::{dungeon::Dungeon, corridor::Corridor};
+use crate::{dungeon::Dungeon, corridor::Corridor, door::Door};
 
 pub enum DungeonTile
 {
     TileEmpty = 0,
     TileWall,
-    TileDummy
+    TileDummy,
+    TileClosedDoor,
+    TileOpenDoor,
 }
 
+#[derive(Clone)]
 pub struct DungeonMap
 {
     map_width: usize,
@@ -92,6 +95,64 @@ impl DungeonMap
         right_room
     }
 
+    fn get_door_from(&self, corridor: &Corridor, dungeon: &Dungeon) -> Option<Door>
+    {
+        let c = dungeon.get_corridor(corridor.id);
+        match c
+        {
+            Some(x) => x.from_room_door,
+            None => None
+        }
+    }
+
+    fn get_door_to(&self, corridor: &Corridor, dungeon: &Dungeon) -> Option<Door>
+    {
+        let c = dungeon.get_corridor(corridor.id);
+        match c
+        {
+            Some(x) => x.to_room_door,
+            None => None
+        }
+    }
+
+    fn create_door_from(&mut self, corridor: &Corridor, dungeon: &Dungeon, prev_x: usize, room_wall_y: usize)
+    {
+        match self.get_door_from(corridor, dungeon)
+        {
+            Some(x) => 
+            {
+                let tile = match x.open
+                {
+                    true => DungeonTile::TileOpenDoor,
+                    false => DungeonTile::TileClosedDoor
+                };
+
+                self.map[prev_x][room_wall_y] = tile as u8;
+            },
+
+            None => self.map[prev_x][room_wall_y] = DungeonTile::TileEmpty as u8
+        }
+    }
+
+    fn create_door_to(&mut self, corridor: &Corridor, dungeon: &Dungeon, prev_x: usize, room_wall_y: usize)
+    {
+        match self.get_door_to(corridor, dungeon)
+        {
+            Some(x) => 
+            {
+                let tile = match x.open
+                {
+                    true => DungeonTile::TileOpenDoor,
+                    false => DungeonTile::TileClosedDoor
+                };
+
+                self.map[prev_x][room_wall_y] = tile as u8;
+            },
+
+            None => self.map[prev_x][room_wall_y] = DungeonTile::TileEmpty as u8
+        }
+    }
+
     fn create_corridors(&mut self, dungeon: &Dungeon)
     {
         let mut rng = thread_rng();
@@ -110,14 +171,17 @@ impl DungeonMap
                 //..and the end point in the right wall of the second room
                 let right_room_wall_y = rng.gen_range(0..right_room.2) + right_room.1;
 
-                let pos_x0 = left_room.0;
+                let pos_x0 = left_room.0;                
                 let corridor_x_length = right_room.0 - pos_x0;
                 
-                let mut prev_x:usize = 0;
+                let mut prev_x:usize = pos_x0 as usize;
 
-                for x in 0..=corridor_x_length
+                //Create door 1 if it does exist
+                self.create_door_from(corridor, dungeon, prev_x, left_room_wall_y as usize);
+
+                for x in 1..=corridor_x_length
                 {
-                    prev_x = (pos_x0 + x) as usize;
+                    prev_x = (pos_x0 + x) as usize;                    
                     self.map[prev_x][left_room_wall_y as usize] = DungeonTile::TileEmpty as u8;
                 }
 
@@ -131,12 +195,14 @@ impl DungeonMap
                     1
                 };
 
-                for y in 0..=corridor_y_len
+                //Create door 2 if it does exist
+                self.create_door_to(corridor, dungeon, prev_x, left_room_wall_y as usize);
+
+                for y in 1..=corridor_y_len
                 {
                     self.map[prev_x][(left_room_wall_y as isize + y as isize * incr) as usize] = DungeonTile::TileEmpty as u8
                 }
             }
-
         }
     }
 
@@ -205,11 +271,73 @@ impl DungeonMap
         }
     }
 
+    fn count_floors_around_door(&self, x: isize, y: isize) -> u8
+    {
+        let mut floors_number = 8;
+
+        if self.has_wall(x - 1, y)
+        {
+            floors_number -= 1;
+        }        
+        if self.has_wall(x + 1, y)
+        {
+            floors_number -= 1;
+        }
+        if self.has_wall(x, y + 1)
+        {
+            floors_number -= 1;
+        }
+        if self.has_wall(x, y - 1)
+        {
+            floors_number -= 1;
+        }
+        if self.has_wall(x - 1, y - 1)
+        {
+            floors_number -= 1;
+        }
+        if self.has_wall(x + 1, y + 1)
+        {
+            floors_number -= 1;
+        }
+        if self.has_wall(x - 1, y + 1)
+        {
+            floors_number -= 1;
+        }
+        if self.has_wall(x + 1, y - 1)
+        {
+            floors_number -= 1;
+        }
+
+        floors_number
+    }
+
+    fn remove_not_useful_doors(&mut self)
+    {
+        const MAX_FLOOR_AROUND_DOOR: u8 = 3;
+
+        for y in 0..self.map_height
+        {
+            for x in 0..self.map_width
+            {
+                let tile = self.map[x][y];
+
+                if tile == DungeonTile::TileClosedDoor as u8
+                {
+                    if self.count_floors_around_door(x as isize, y as isize) > MAX_FLOOR_AROUND_DOOR
+                    {
+                        self.map[x][y] = DungeonTile::TileEmpty as u8;
+                    }
+                }
+            }
+        }
+    }
+
     pub fn create_map(&mut self, d: &Dungeon) -> &Vec<Vec<u8>>
     {
         self.create_rooms(&d);
         self.create_corridors(&d);
         self.remove_redundant_walls();
+        self.remove_not_useful_doors();
 
         &self.map
     }

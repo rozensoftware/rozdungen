@@ -5,6 +5,6 @@ pub struct Door
     pub id: usize,
     /// If true the door is locked
     pub locked: bool,
-    /// If true the door exists, if not there is no door at this place
-    pub exists: bool,
+    //True the door is opened
+    pub open: bool,
 }

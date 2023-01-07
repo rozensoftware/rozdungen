@@ -196,30 +196,30 @@ impl Dungeon
         Ok(self)
     }
 
-    /// Adds random doors in the dungeons. This function must be called after generate function
+    /// Adds random doors in the dungeon. This function must be called after generate function
     pub fn add_doors(&mut self) -> Result<(), String>
     {
         if self.rooms.len() == 1
         {
-            return Err("The is only one room in the dungeon. No door is needed.".to_string());
+            return Err("There's only one room in the dungeon. No door is needed.".to_string());
         }
 
         let mut door_id = 0;
         let mut rng = thread_rng();
         
         const DOOR_CREATION_CHANCE: u8 = 50;
-        const DOORS_ON_BOTH_SIDES_CHANCE: u8 = 50;
+        const DOORS_ON_BOTH_SIDES_CHANCE: u8 = 25;
 
         for c in &mut self.corridors
         {
-            if rng.gen_range(1..100) <= DOOR_CREATION_CHANCE
+            if rng.gen_range(1..=100) <= DOOR_CREATION_CHANCE
             {
-                let d1 = Door{id: door_id, locked: false, exists: true};
+                let d1 = Door{id: door_id, locked: false, open: false};
 
-                if rng.gen_range(1..100) <= DOORS_ON_BOTH_SIDES_CHANCE
+                if rng.gen_range(1..=100) <= DOORS_ON_BOTH_SIDES_CHANCE
                 {
                     door_id += 1;
-                    let d2 = Door{id: door_id, locked: false, exists: true};
+                    let d2 = Door{id: door_id, locked: false, open: false};
                     c.from_room_door = Some(d2);
                 }
 
