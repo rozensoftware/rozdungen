@@ -1,4 +1,6 @@
 use crate::door::Door;
+use crate::item::Item;
+use crate::item::ItemType;
 use crate::room::Room;
 use crate::corridor::Corridor;
 use rand::thread_rng;
@@ -11,14 +13,13 @@ pub enum DungeonType
     SeparateRooms   //Classic dunegon with separate rooms connected with corridors
 }
 
-#[derive(Debug)]
-pub struct Dungeon
+pub struct Dungeon<'chamber>
 {
     rooms: Vec<Room>,
-    corridors: Vec<Corridor>,
+    corridors: Vec<Corridor<'chamber>>,
 }
 
-impl Dungeon
+impl<'chamber> Dungeon<'chamber>
 {
     pub fn new() -> Self
     {
@@ -39,7 +40,7 @@ impl Dungeon
 
     /// Gets a room by its index in the array
     ///  * 'room_idx' - Room index
-    pub fn get_room(&self, room_idx: usize) -> Option<&Room>
+    pub fn get_room(&'chamber self, room_idx: usize) -> Option<&Room>
     {
         self.rooms.get(room_idx)
     }
@@ -53,7 +54,7 @@ impl Dungeon
 
     /// Gets all corridors connected to specified room
     /// * 'room' - A room to which all found corridors are connected to
-    pub fn get_room_corridors(&self, room: Room) -> Vec<&Corridor>
+    pub fn get_room_corridors(&self, room: &Room) -> Vec<&Corridor>
     {
         let mut corridor_list:Vec<&Corridor> = Vec::new();
         let corridors: &Vec<Corridor>= &self.corridors;
@@ -77,7 +78,7 @@ impl Dungeon
         let x2 = x1 + room.width;
         let y2 = x2 + room.height;
 
-        for r in &self.rooms
+        for r in self.rooms.iter()
         {
             let xr1 = r.x;
             let yr1 = r.y;
@@ -99,8 +100,8 @@ impl Dungeon
     /// * 'max_dungeon_height' - Max. dungeon height in internal units
     /// * 'max_room_width' - Max. room width in internal units
     /// * 'max_room_height' - Max room height in internal units
-    pub fn generate(&mut self, max_rooms: u16, dungeon_type: DungeonType, max_dungeon_width: u16, max_dungeon_height: u16,
-        max_room_width: u16, max_room_height: u16) -> Result<&mut Dungeon, String>
+    pub fn generate(&'chamber mut self, max_rooms: u16, dungeon_type: DungeonType, max_dungeon_width: u16, max_dungeon_height: u16,
+        max_room_width: u16, max_room_height: u16) -> Result<&mut Self, String>
     {
         if max_rooms == 0
         {
@@ -136,12 +137,12 @@ impl Dungeon
                 }
                 else
                 {
-                    r
+                    r.clone()
                 };    
 
                 if self.is_intersect_with_another_room(&r2) == false
                 {
-                    self.rooms.push(r);
+                    //self.rooms.push(r);
                     max_room_id += 1;                            
                     break;
                 }
@@ -150,49 +151,65 @@ impl Dungeon
             }
         }
 
+        let rooms_number = self.get_rooms_number();
+
         if max_rooms > 1
         {
             //Connect rooms with corridors
             let mut max_corridor_id = 0;
 
-            let rooms_array= &self.rooms;
-            let actual_rooms_size = self.rooms.len();
-
             if dungeon_type == DungeonType::Basement
             {
-                rooms_array.into_iter().for_each(|r| {
+                for r_idx in 0..rooms_number
+                {
                     let mut idx: usize;
 
                     loop 
                     {
-                        idx = rng.gen_range(0 .. actual_rooms_size);
-                        if idx != r.id
+                        let r1 = &self.rooms[r_idx];
+                        idx = rng.gen_range(0 .. rooms_number);
+                        if idx != r1.id
                         {
                             break;
                         }
                     }
     
-                    let corridor = Corridor::new(max_corridor_id, r.clone(), self.rooms[idx], None, None);
+                    let r1 = &self.rooms[r_idx];
+                    let r2 = &self.rooms[idx];
+                    let corridor = Corridor::new(max_corridor_id, r1, r2, None, None);
                     self.corridors.push(corridor);
-                    max_corridor_id += 1;    
-                });
+                    max_corridor_id += 1;        
+                }
             }
             else if dungeon_type == DungeonType::SeparateRooms
             {
-                let rooms_number = rooms_array.len();
-
-                (0..rooms_number - 1).for_each(|i| {
-                    let r1 = self.rooms[i];
-                    let r2 = self.rooms[i + 1];
+                for i in 0..rooms_number - 1
+                {
+                    let r1 = &self.rooms[i];
+                    let r2 = &self.rooms[i + 1];
 
                     let corridor = Corridor::new(max_corridor_id, r1, r2, None, None);
                     self.corridors.push(corridor);
                     max_corridor_id += 1;    
-                });
+                }
             }
         }
 
-        Ok(self)
+        let rooms2 = self.rooms.clone();
+        Ok(&mut Self { rooms: rooms2, corridors: self.corridors.clone() })
+    }
+
+    /// Populate chambers with items
+    /// * 'keys' - if true the routine try to add keys for locked doors. If false no keys will be created
+    pub fn add_items(&mut self, keys: bool) -> Result<(), String>
+    {
+        let mut item_id = 0;
+
+        if keys
+        {
+        }
+
+        Ok(())
     }
 
     /// Adds random doors in the dungeon. This function must be called after generate function
@@ -206,8 +223,8 @@ impl Dungeon
         let mut door_id = 0;
         let mut rng = thread_rng();
         
-        const DOOR_CREATION_CHANCE: u8 = 70;
-        const DOORS_ON_BOTH_SIDES_CHANCE: u8 = 30;
+        const DOOR_CREATION_CHANCE: u8 = 75;
+        const DOORS_ON_BOTH_SIDES_CHANCE: u8 = 40;
 
         self.corridors.iter_mut().for_each(|c| {
             if rng.gen_range(1..=100) <= DOOR_CREATION_CHANCE
@@ -255,8 +272,8 @@ mod tests
         let count = d.get_rooms_number();
         assert!(count > 0);
 
-        let room = d.rooms[2];
-        let corrs = d.get_room_corridors(room);
+        let room = &d.rooms[2];
+        let corrs = d.get_room_corridors(&room);
         assert!(corrs.len() != 0);
 
         d.add_doors().unwrap();

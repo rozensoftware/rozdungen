@@ -1,6 +1,7 @@
 use std::{env, rc::Rc};
 use std::path::PathBuf;
 use ggez::graphics::{Canvas, Color};
+use ggez::winit::event::ElementState;
 use rozdungenlib::{dungeon::Dungeon, dungeonmap::{DungeonMap, DungeonTile}};
 use ggez::{
     event,  
@@ -32,7 +33,7 @@ struct MainState
 
 impl MainState
 {
-    fn new(ctx: &mut Context, d: &mut Dungeon) -> GameResult<MainState> 
+    fn new(ctx: &mut Context, d: &Dungeon) -> GameResult<MainState> 
     {
         let image = Image::from_path(ctx, "/wall.png")?;
         let mut inst = graphics::InstanceArray::new(ctx, image);
@@ -157,12 +158,12 @@ pub fn main() -> GameResult
 
     let mut d = Dungeon::new();
 
-    let dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, rozdungenlib::dungeon::DungeonType::SeparateRooms,
+    let mut dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, rozdungenlib::dungeon::DungeonType::SeparateRooms,
         WINDOW_WIDTH as u16 / TILE_SIZE, WINDOW_HEIGHT as u16 / TILE_SIZE, 
         MAX_ROOM_WIDTH, MAX_ROOM_HEIGHT)
     {
         Ok(x) => x,
-        Err(y) => panic!("{}", y)
+        Err(_)  => panic!("")
     };
 
     dungeon.add_doors().unwrap();

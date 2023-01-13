@@ -3,7 +3,7 @@
 ![dungeon pic 1](https://github.com/rozensoftware/rozdungen/blob/master/dungeon.png)
 ![dungeon pic 2](https://github.com/rozensoftware/rozdungen/blob/master/dungeon2.png)
 
-Rozdungenlib is a library for generating simple dungeons. Currently, the dungeons consist of empty chambers connected by corridors. Two generation modes are available: 
+Rozdungenlib is a library for generating simple dungeons. Chambers are filled with items, monsters and other data you can use for building your own dungeon. Two generation modes are available: 
 
 ```
 DungeonType::Basement and DungeonType::SeparateRooms.
@@ -11,6 +11,8 @@ DungeonType::Basement and DungeonType::SeparateRooms.
 
 They give slightly different dungeon schemas.
 
+In the example a simple dungeon renderer is used. It doesn't mean the rendered maze looks exactly as it is presented. It might look differently according to your data visualization.
+The dungeon interface provides you everything you need to create such labirynth and populate it with mosnters, treasure, keys, doors and other stuff like that.
 
 ## Purpose
 
@@ -43,6 +45,9 @@ Code usage example:
         }
     };
 
+    //Create random doors
+    dungeon.add_doors().unwrap();
+    
     //Get number of generated rooms
     let count = dungeon.get_rooms_number();
 

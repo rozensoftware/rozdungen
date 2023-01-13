@@ -153,6 +153,8 @@ impl DungeonMap
 
     fn create_corridors(&mut self, dungeon: &Dungeon)
     {
+        const MIN_CORRIDOR_LENGTH_FOR_DOOR: u16 = 3;
+
         let mut rng = thread_rng();
         let corridors_number = dungeon.get_corridors_number();
 
@@ -170,17 +172,23 @@ impl DungeonMap
                 let right_room_wall_y = rng.gen_range(0..right_room.2) + right_room.1;
 
                 let pos_x0 = left_room.0;                
-                let corridor_x_length = right_room.0 - pos_x0;
+                let corridor_x_len = right_room.0 - pos_x0;
                 
                 let mut prev_x:usize = pos_x0 as usize;
 
-                //Create door 1 if it does exist
-                self.create_door_from(corridor, dungeon, prev_x, left_room_wall_y as usize);
-
-                for x in 1..=corridor_x_length
+                for x in 0..=corridor_x_len
                 {
-                    prev_x = (pos_x0 + x) as usize;                    
-                    self.map[prev_x][left_room_wall_y as usize] = DungeonTile::TileEmpty as u8;
+                    //Create door 1 if it does exist and has the correct length
+                    if x == 1 && corridor_x_len >= MIN_CORRIDOR_LENGTH_FOR_DOOR
+                    {
+                        self.create_door_from(corridor, dungeon, prev_x, left_room_wall_y as usize);
+                        prev_x = (pos_x0 + x) as usize;                    
+                    }
+                    else
+                    {
+                        prev_x = (pos_x0 + x) as usize;                    
+                        self.map[prev_x][left_room_wall_y as usize] = DungeonTile::TileEmpty as u8;    
+                    }
                 }
 
                 let corridor_y_len = left_room_wall_y.abs_diff(right_room_wall_y);
@@ -193,12 +201,15 @@ impl DungeonMap
                     1
                 };
 
-                //Create door 2 if it does exist
-                self.create_door_to(corridor, dungeon, prev_x, left_room_wall_y as usize);
-
-                for y in 1..=corridor_y_len
+                for y in 0..=corridor_y_len
                 {
                     self.map[prev_x][(left_room_wall_y as isize + y as isize * incr) as usize] = DungeonTile::TileEmpty as u8
+                }
+
+                //Create door 2 if it does exist and the length is right
+                if corridor_y_len >= MIN_CORRIDOR_LENGTH_FOR_DOOR
+                {
+                    self.create_door_to(corridor, dungeon, prev_x, (left_room_wall_y as isize + (corridor_y_len - 2) as isize * incr) as usize);
                 }
             }
         }
@@ -265,57 +276,30 @@ impl DungeonMap
         });
     }
 
-    fn count_floors_around_door(&self, x: isize, y: isize) -> u8
+    fn is_valid_door_position(&self, x: isize, y: isize) -> bool
     {
-        let mut floors_number = 8;
+        (self.has_wall(x, y - 1)
+        && self.has_wall(x, y + 1)
+        && !self.has_wall(x + 1, y)
+        && !self.has_wall(x - 1, y))
 
-        if self.has_wall(x - 1, y)
-        {
-            floors_number -= 1;
-        }        
-        if self.has_wall(x + 1, y)
-        {
-            floors_number -= 1;
-        }
-        if self.has_wall(x, y + 1)
-        {
-            floors_number -= 1;
-        }
-        if self.has_wall(x, y - 1)
-        {
-            floors_number -= 1;
-        }
-        if self.has_wall(x - 1, y - 1)
-        {
-            floors_number -= 1;
-        }
-        if self.has_wall(x + 1, y + 1)
-        {
-            floors_number -= 1;
-        }
-        if self.has_wall(x - 1, y + 1)
-        {
-            floors_number -= 1;
-        }
-        if self.has_wall(x + 1, y - 1)
-        {
-            floors_number -= 1;
-        }
+        ||
 
-        floors_number
+        (self.has_wall(x - 1, y)
+        && self.has_wall(x + 1, y)
+        && !self.has_wall(x, y - 1)
+        && !self.has_wall(x, y + 1))
     }
 
     fn remove_not_useful_doors(&mut self)
     {
-        const MAX_FLOOR_AROUND_DOOR: u8 = 2;
-
         (0..self.map_height).for_each(|y| {
             (0..self.map_width).for_each(|x| {
                 let tile = self.map[x][y];
 
                 if tile == DungeonTile::TileClosedDoor as u8
                 {
-                    if self.count_floors_around_door(x as isize, y as isize) > MAX_FLOOR_AROUND_DOOR
+                    if !self.is_valid_door_position(x as isize, y as isize)
                     {
                         self.map[x][y] = DungeonTile::TileEmpty as u8;
                     }
