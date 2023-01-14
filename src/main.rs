@@ -173,7 +173,7 @@ pub fn main() -> GameResult
 
     let mut d = Dungeon::new();
 
-    let dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, rozdungenlib::dungeon::DungeonType::SeparateRooms,
+    let dungeon = match d.generate(MAX_ROOMS_TO_GENERATE, rozdungenlib::dungeon::DungeonType::Basement,
         WINDOW_WIDTH as u16 / TILE_SIZE, WINDOW_HEIGHT as u16 / TILE_SIZE, 
         MAX_ROOM_WIDTH, MAX_ROOM_HEIGHT)
     {

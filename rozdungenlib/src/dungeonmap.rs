@@ -69,13 +69,16 @@ impl DungeonMap
 
     fn get_left_wall(&self, corridor: &Corridor, dungeon: &Dungeon) -> (u16, u16, u16)
     {
-        let left_room = if dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width <= dungeon.get_room_by_id(corridor.to_room_id).unwrap().x
+        let from_room = dungeon.get_room_by_id(corridor.from_room_id).unwrap();
+        let to_room = dungeon.get_room_by_id(corridor.to_room_id).unwrap();
+
+        let left_room = if from_room.x + from_room.width <= to_room.x
         {
-            (dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width, dungeon.get_room_by_id(corridor.from_room_id).unwrap().y, dungeon.get_room_by_id(corridor.from_room_id).unwrap().height)
+            (from_room.x + from_room.width, from_room.y, from_room.height)
         }
         else
         {
-            (dungeon.get_room_by_id(corridor.to_room_id).unwrap().x, dungeon.get_room_by_id(corridor.to_room_id).unwrap().y, dungeon.get_room_by_id(corridor.to_room_id).unwrap().height)
+            (to_room.x, to_room.y, to_room.height)
         };
 
         left_room
@@ -83,13 +86,16 @@ impl DungeonMap
 
     fn get_right_wall(&self, corridor: &Corridor, dungeon: &Dungeon) -> (u16, u16, u16)
     {
-        let right_room = if dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width > dungeon.get_room_by_id(corridor.to_room_id).unwrap().x
+        let from_room = dungeon.get_room_by_id(corridor.from_room_id).unwrap();
+        let to_room = dungeon.get_room_by_id(corridor.to_room_id).unwrap();
+
+        let right_room = if from_room.x + from_room.width > to_room.x
         {
-            (dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width, dungeon.get_room_by_id(corridor.from_room_id).unwrap().y, dungeon.get_room_by_id(corridor.from_room_id).unwrap().height)
+            (from_room.x + from_room.width, from_room.y, from_room.height)
         }
         else
         {
-            (dungeon.get_room_by_id(corridor.to_room_id).unwrap().x, dungeon.get_room_by_id(corridor.to_room_id).unwrap().y, dungeon.get_room_by_id(corridor.to_room_id).unwrap().height)
+            (to_room.x, to_room.y, to_room.height)
         };
 
         right_room
@@ -183,8 +189,8 @@ impl DungeonMap
                     //Create door 1 if it does exist and has the correct length
                     if x == 1 && corridor_x_len >= MIN_CORRIDOR_LENGTH_FOR_DOOR
                     {
-                        self.create_door_from(corridor, dungeon, prev_x, left_room_wall_y as usize);
                         prev_x = (pos_x0 + x) as usize;                    
+                        self.create_door_from(corridor, dungeon, prev_x, left_room_wall_y as usize);
                     }
                     else
                     {
