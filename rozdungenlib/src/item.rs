@@ -4,6 +4,8 @@ pub enum ItemType
     ///id of the door that key can open
     Key(usize),
     Weapon,
+    Armor,
+    Potion,
 }
 
 #[derive(Clone, PartialEq)]

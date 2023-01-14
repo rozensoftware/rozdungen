@@ -1,6 +1,6 @@
 use rand::{thread_rng, Rng};
 
-use crate::{dungeon::Dungeon, corridor::Corridor, door::Door};
+use crate::{dungeon::Dungeon, corridor::Corridor, door::Door, item::ItemType};
 
 pub enum DungeonTile
 {
@@ -9,6 +9,8 @@ pub enum DungeonTile
     TileDummy,
     TileClosedDoor,
     TileOpenDoor,
+    TileChest,
+    TileKey,
 }
 
 #[derive(Clone)]
@@ -65,29 +67,29 @@ impl DungeonMap
         }
     }
 
-    fn get_left_wall(&self, corridor: &Corridor) -> (u16, u16, u16)
+    fn get_left_wall(&self, corridor: &Corridor, dungeon: &Dungeon) -> (u16, u16, u16)
     {
-        let left_room = if corridor.from_room.x + corridor.from_room.width <= corridor.to_room.x
+        let left_room = if dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width <= dungeon.get_room_by_id(corridor.to_room_id).unwrap().x
         {
-            (corridor.from_room.x + corridor.from_room.width, corridor.from_room.y, corridor.from_room.height)
+            (dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width, dungeon.get_room_by_id(corridor.from_room_id).unwrap().y, dungeon.get_room_by_id(corridor.from_room_id).unwrap().height)
         }
         else
         {
-            (corridor.to_room.x,  corridor.to_room.y, corridor.to_room.height)
+            (dungeon.get_room_by_id(corridor.to_room_id).unwrap().x, dungeon.get_room_by_id(corridor.to_room_id).unwrap().y, dungeon.get_room_by_id(corridor.to_room_id).unwrap().height)
         };
 
         left_room
     }
 
-    fn get_right_wall(&self, corridor: &Corridor) -> (u16, u16, u16)
+    fn get_right_wall(&self, corridor: &Corridor, dungeon: &Dungeon) -> (u16, u16, u16)
     {
-        let right_room = if corridor.from_room.x + corridor.from_room.width > corridor.to_room.x
+        let right_room = if dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width > dungeon.get_room_by_id(corridor.to_room_id).unwrap().x
         {
-            (corridor.from_room.x + corridor.from_room.width, corridor.from_room.y, corridor.from_room.height)
+            (dungeon.get_room_by_id(corridor.from_room_id).unwrap().x + dungeon.get_room_by_id(corridor.from_room_id).unwrap().width, dungeon.get_room_by_id(corridor.from_room_id).unwrap().y, dungeon.get_room_by_id(corridor.from_room_id).unwrap().height)
         }
         else
         {
-            (corridor.to_room.x,  corridor.to_room.y, corridor.to_room.height)
+            (dungeon.get_room_by_id(corridor.to_room_id).unwrap().x, dungeon.get_room_by_id(corridor.to_room_id).unwrap().y, dungeon.get_room_by_id(corridor.to_room_id).unwrap().height)
         };
 
         right_room
@@ -162,8 +164,8 @@ impl DungeonMap
         {
             if let Some(corridor) = dungeon.get_corridor(c)
             {
-                let left_room = self.get_left_wall(&corridor);
-                let right_room = self.get_right_wall(&corridor);
+                let left_room = self.get_left_wall(&corridor, dungeon);
+                let right_room = self.get_right_wall(&corridor, dungeon);
 
                 //Find random right place in the wall of the left room to start drawing a corridor from
                 let left_room_wall_y = rng.gen_range(0..left_room.2) + left_room.1;
@@ -210,6 +212,46 @@ impl DungeonMap
                 if corridor_y_len >= MIN_CORRIDOR_LENGTH_FOR_DOOR
                 {
                     self.create_door_to(corridor, dungeon, prev_x, (left_room_wall_y as isize + (corridor_y_len - 2) as isize * incr) as usize);
+                }
+            }
+        }
+    }
+
+    fn create_items(&mut self, dungeon: &Dungeon)
+    {
+        let mut rng = thread_rng();
+
+        let rooms_number = dungeon.get_rooms_number();
+        for r in 0..rooms_number
+        {
+            let room = dungeon.get_room(r).unwrap();
+            let item_iter = room.items.iter();
+            for i in item_iter
+            {
+                let mut loop_number = 10;
+
+                while loop_number > 0
+                {
+                    let r_x = rng.gen_range(room.x..room.x + room.width) as usize;
+                    let r_y = rng.gen_range(room.y..room.y + room.height) as usize;
+    
+                    let tile = self.map[r_x][r_y];
+                    if tile != DungeonTile::TileChest as u8 && tile != DungeonTile::TileKey as u8
+                    {
+                        //Currently we won't store any item information
+                        if i.item_type == ItemType::Key(0)
+                        {
+                            self.map[r_x][r_y] = DungeonTile::TileKey as u8;    
+                        }
+                        else
+                        {
+                            self.map[r_x][r_y] = DungeonTile::TileChest as u8;    
+                        }
+
+                        break;
+                    }
+
+                    loop_number -= 1;
                 }
             }
         }
@@ -314,6 +356,7 @@ impl DungeonMap
         self.create_corridors(&d);
         self.remove_redundant_walls();
         self.remove_not_useful_doors();
+        self.create_items(&d);        
 
         &self.map
     }

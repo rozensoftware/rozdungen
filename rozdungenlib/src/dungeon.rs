@@ -13,13 +13,13 @@ pub enum DungeonType
     SeparateRooms   //Classic dunegon with separate rooms connected with corridors
 }
 
-pub struct Dungeon<'chamber>
+pub struct Dungeon
 {
     rooms: Vec<Room>,
-    corridors: Vec<Corridor<'chamber>>,
+    corridors: Vec<Corridor>,
 }
 
-impl<'chamber> Dungeon<'chamber>
+impl Dungeon
 {
     pub fn new() -> Self
     {
@@ -40,9 +40,16 @@ impl<'chamber> Dungeon<'chamber>
 
     /// Gets a room by its index in the array
     ///  * 'room_idx' - Room index
-    pub fn get_room(&'chamber self, room_idx: usize) -> Option<&Room>
+    pub fn get_room(&self, room_idx: usize) -> Option<&Room>
     {
         self.rooms.get(room_idx)
+    }
+
+    /// Gets a room by its id
+    ///  * 'room_id' - Room id
+    pub fn get_room_by_id(&self, room_id: usize) -> Option<&Room>
+    {
+        self.rooms.iter().find(|&x| x.id == room_id)
     }
 
     /// Gets a corridor by its index
@@ -50,6 +57,27 @@ impl<'chamber> Dungeon<'chamber>
     pub fn get_corridor(&self, corridor_idx: usize) -> Option<&Corridor>
     {
         self.corridors.get(corridor_idx)
+    }
+
+    /// Counts how many doors exist in the dungeon
+    pub fn get_doors_number(&self) -> usize
+    {
+        let mut num: usize = 0;
+
+        for c in self.corridors.iter()
+        {
+            if c.from_room_door.is_some()
+            {
+                num += 1;
+            }
+
+            if c.to_room_door.is_some()
+            {
+                num += 1;
+            }
+        }
+
+        num
     }
 
     /// Gets all corridors connected to specified room
@@ -60,7 +88,7 @@ impl<'chamber> Dungeon<'chamber>
         let corridors: &Vec<Corridor>= &self.corridors;
 
         corridors.into_iter().for_each(|c|{
-            if c.from_room == room || c.to_room == room
+            if c.from_room_id == room.id || c.to_room_id == room.id
             {
                 corridor_list.push(c);
             }
@@ -100,7 +128,7 @@ impl<'chamber> Dungeon<'chamber>
     /// * 'max_dungeon_height' - Max. dungeon height in internal units
     /// * 'max_room_width' - Max. room width in internal units
     /// * 'max_room_height' - Max room height in internal units
-    pub fn generate(&'chamber mut self, max_rooms: u16, dungeon_type: DungeonType, max_dungeon_width: u16, max_dungeon_height: u16,
+    pub fn generate(&mut self, max_rooms: u16, dungeon_type: DungeonType, max_dungeon_width: u16, max_dungeon_height: u16,
         max_room_width: u16, max_room_height: u16) -> Result<&mut Self, String>
     {
         if max_rooms == 0
@@ -142,7 +170,7 @@ impl<'chamber> Dungeon<'chamber>
 
                 if self.is_intersect_with_another_room(&r2) == false
                 {
-                    //self.rooms.push(r);
+                    self.rooms.push(r);
                     max_room_id += 1;                            
                     break;
                 }
@@ -176,40 +204,73 @@ impl<'chamber> Dungeon<'chamber>
     
                     let r1 = &self.rooms[r_idx];
                     let r2 = &self.rooms[idx];
-                    let corridor = Corridor::new(max_corridor_id, r1, r2, None, None);
+                    let corridor = Corridor::new(max_corridor_id, r1.id, r2.id, None, None);
                     self.corridors.push(corridor);
                     max_corridor_id += 1;        
                 }
             }
             else if dungeon_type == DungeonType::SeparateRooms
             {
-                for i in 0..rooms_number - 1
+                for i in 0..(rooms_number as isize) - 1
                 {
-                    let r1 = &self.rooms[i];
-                    let r2 = &self.rooms[i + 1];
+                    let r1 = &self.rooms[i as usize];
+                    let r2 = &self.rooms[i as usize + 1];
 
-                    let corridor = Corridor::new(max_corridor_id, r1, r2, None, None);
+                    let corridor = Corridor::new(max_corridor_id, r1.id, r2.id, None, None);
                     self.corridors.push(corridor);
                     max_corridor_id += 1;    
                 }
             }
         }
 
-        let rooms2 = self.rooms.clone();
-        Ok(&mut Self { rooms: rooms2, corridors: self.corridors.clone() })
+        Ok(self)
     }
 
     /// Populate chambers with items
     /// * 'keys' - if true the routine try to add keys for locked doors. If false no keys will be created
-    pub fn add_items(&mut self, keys: bool) -> Result<(), String>
+    pub fn add_items(&mut self, keys: bool)
     {
+        let mut rng = thread_rng();
         let mut item_id = 0;
+        let doors_number = self.get_doors_number();
+        let rooms_number = self.get_rooms_number();
 
-        if keys
+        if keys && doors_number > 0
         {
+            //Add key to random room. Currently every key open every door
+            //It generates number of keys exactly equal to the number of existing doors
+            (0..doors_number).for_each(|_| {
+                let item = Item::new(item_id, ItemType::Key(0), &"Universal Key".to_string());
+                let room_idx= rng.gen_range(0..rooms_number);
+                let r = &mut self.rooms[room_idx];
+                r.items.push(item);
+
+                item_id += 1;
+            });
         }
 
-        Ok(())
+        //Gererate random items
+        let item_type_vec = vec![ItemType::Weapon, ItemType::Armor, ItemType::Potion];
+        let number_items_to_generate = rng.gen_range(rooms_number..rooms_number * 2);
+        let number_item_type = item_type_vec.len();
+
+        for _ in 0..number_items_to_generate
+        {
+            let item_type = match rng.gen_range(0..number_item_type)
+            {
+                0 => ItemType::Weapon,
+                1 => ItemType::Armor,
+                2 => ItemType::Potion,
+                _ => panic!("Unknown item type!")
+            };
+
+            let item = Item::new(item_id, item_type, &format!("Item: {}", item_id));
+            let room_idx= rng.gen_range(0..rooms_number);
+            let r = &mut self.rooms[room_idx];
+            r.items.push(item);
+
+            item_id += 1;
+        }
     }
 
     /// Adds random doors in the dungeon. This function must be called after generate function
