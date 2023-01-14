@@ -11,8 +11,8 @@ DungeonType::Basement and DungeonType::SeparateRooms.
 
 They give slightly different dungeon schemas.
 
-In the example a simple dungeon renderer is used. It doesn't mean the rendered maze looks exactly as it is presented. It might look differently according to your data visualization.
-The dungeon interface provides you everything you need to create such labirynth and populate it with mosnters, treasure, keys, doors and other stuff like that.
+In the example a simple dungeon renderer is used. It doesn't mean the created maze looks exactly as it is presented. It might look differently according to your data visualization.
+The dungeon interface provides you everything you need to create such labirynth and populate it with monsters, treasure, keys, doors and other stuff like that.
 
 ## Purpose
 
