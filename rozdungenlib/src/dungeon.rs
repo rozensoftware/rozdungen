@@ -191,10 +191,10 @@ impl Dungeon
                 for r_idx in 0..rooms_number
                 {
                     let mut idx: usize;
+                    let r1 = &self.rooms[r_idx];
 
                     loop 
                     {
-                        let r1 = &self.rooms[r_idx];
                         idx = rng.gen_range(0 .. rooms_number);
                         if idx != r1.id
                         {
@@ -202,7 +202,6 @@ impl Dungeon
                         }
                     }
     
-                    let r1 = &self.rooms[r_idx];
                     let r2 = &self.rooms[idx];
                     let corridor = Corridor::new(max_corridor_id, r1.id, r2.id, None, None);
                     self.corridors.push(corridor);
@@ -251,7 +250,7 @@ impl Dungeon
 
         //Gererate random items
         let item_type_vec = vec![ItemType::Weapon, ItemType::Armor, ItemType::Potion];
-        let number_items_to_generate = rng.gen_range(rooms_number..rooms_number * 2);
+        let number_items_to_generate = rng.gen_range(rooms_number..rooms_number + 2);
         let number_item_type = item_type_vec.len();
 
         for _ in 0..number_items_to_generate
@@ -290,7 +289,7 @@ impl Dungeon
         self.corridors.iter_mut().for_each(|c| {
             if rng.gen_range(1..=100) <= DOOR_CREATION_CHANCE
             {
-                let d1 = Door{id: door_id, locked: false, open: false};
+                let d1 = Door{id: door_id, locked: false, open: rng.gen_range(0..100) > 50};
 
                 if rng.gen_range(1..=100) <= DOORS_ON_BOTH_SIDES_CHANCE
                 {
