@@ -28,6 +28,8 @@ struct MainState
     map: Rc<Vec<Vec<u8>>>,
     open_door_image: graphics::Image,
     closed_door_image: graphics::Image,
+    chest: graphics::Image,
+    key: graphics::Image,
 }
 
 impl MainState
@@ -50,6 +52,8 @@ impl MainState
             map: Rc::new(map.clone()),
             open_door_image: graphics::Image::from_path(ctx, "/door_open.png")?,
             closed_door_image: graphics::Image::from_path(ctx, "/door_closed.png")?,
+            chest: graphics::Image::from_path(ctx, "/chest.png")?,
+            key: graphics::Image::from_path(ctx, "/key.png")?,
         })
     }
 
@@ -72,7 +76,7 @@ impl MainState
         });
     }
 
-    pub fn draw_doors(&self, canvas: &mut Canvas)
+    pub fn draw_elements(&self, canvas: &mut Canvas)
     {
         let color = Color::from((255, 255, 255, 255));
 
@@ -95,6 +99,18 @@ impl MainState
                         .dest(Vec2::new(tile_x as f32, tile_y as f32))
                         .color(color));                
                 }
+                else if tile == DungeonTile::TileChest as u8
+                {
+                    canvas.draw(&self.chest, DrawParam::new()
+                        .dest(Vec2::new(tile_x as f32, tile_y as f32))
+                        .color(color));                
+                }
+                else if tile == DungeonTile::TileKey as u8
+                {
+                    canvas.draw(&self.key, DrawParam::new()
+                        .dest(Vec2::new(tile_x as f32, tile_y as f32))
+                        .color(color));                
+                }
             });
         });
     }
@@ -114,7 +130,7 @@ impl event::EventHandler<ggez::GameError> for MainState
 
         canvas.draw(&self.instances, DrawParam::new().dest(Vec2::new(0.0, 0.0)));
 
-        self.draw_doors(&mut canvas);
+        self.draw_elements(&mut canvas);
 
         canvas.finish(ctx)?;
 
@@ -162,10 +178,11 @@ pub fn main() -> GameResult
         MAX_ROOM_WIDTH, MAX_ROOM_HEIGHT)
     {
         Ok(x) => x,
-        Err(y) => panic!("{}", y)
+        Err(_)  => panic!("")
     };
 
     dungeon.add_doors().unwrap();
+    dungeon.add_items(true);
 
     let (mut context, event_loop) = context_builder.build()?;
     let state = MainState::new(&mut context, dungeon).unwrap();

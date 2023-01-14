@@ -1,19 +1,19 @@
-use crate::{room::Room, door::Door};
+use crate::door::Door;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Corridor
 {
     pub id: usize,
-    pub from_room: Room,
-    pub to_room: Room,
+    pub from_room_id: usize,
+    pub to_room_id: usize,
     pub from_room_door: Option<Door>,
     pub to_room_door: Option<Door>,
 }
 
 impl Corridor
 {
-    pub fn new(cid: usize, from: Room, to: Room, door_from: Option<Door>, door_to: Option<Door>) -> Self
+    pub fn new(cid: usize, from: usize, to: usize, door_from: Option<Door>, door_to: Option<Door>) -> Self
     {
-        Self { id: cid, from_room: from, to_room: to, from_room_door: door_from, to_room_door: door_to }
+        Self { id: cid, from_room_id: from, to_room_id: to, from_room_door: door_from, to_room_door: door_to }
     }
 }
