@@ -1,10 +1,15 @@
 # Rozdungen
 
 ![dungeon pic 1](https://github.com/rozensoftware/rozdungen/blob/master/dungeon.png)
+
 Schema without decorations
+
 ![dungeon pic 2](https://github.com/rozensoftware/rozdungen/blob/master/dungeon2.png)
+
 Dungeon with keys, doors and chests
+
 ![dungeon pic 3](https://github.com/rozensoftware/rozdungen/blob/master/dungeon3.png)
+
 Dungeon type grid
 
 ## Brief
