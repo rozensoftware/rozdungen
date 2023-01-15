@@ -9,8 +9,9 @@ use rand::Rng;
 #[derive(PartialEq)]
 pub enum DungeonType
 {
-    Basement,       //Like one big room with many walls
-    SeparateRooms   //Classic dunegon with separate rooms connected with corridors
+    Basement,       //Like one big basement with many walls and corridors
+    SeparateRooms,  //Classic dungeon with separate rooms connected with corridors
+    Grid,           //Rooms are aligned to the grid and connected with corridors
 }
 
 pub struct Dungeon
@@ -122,6 +123,54 @@ impl Dungeon
         false
     }
 
+    fn generate_grid_rooms(&mut self, max_rooms: u16, max_dungeon_width: u16, max_dungeon_height: u16,
+        max_room_width: u16, max_room_height: u16)
+    {
+        let max_grid_y = (max_dungeon_height / max_room_height) as usize;
+        let max_grid_x = (max_dungeon_width / max_room_width) as usize;
+
+        let mut grid_y = vec![false; max_grid_y];
+        let mut grid_x = vec![false; max_grid_x];
+
+        let mut rng = thread_rng();
+
+        for _ in 0..max_rooms
+        {
+            let mut count = 10;
+
+            while count > 0
+            {
+                let y = rng.gen_range(1..max_grid_y - 1);
+                let x = rng.gen_range(1..max_grid_x - 1);
+    
+                if !grid_x[x] && !grid_y[y]
+                {
+                    grid_x[x] = true; grid_y[y] = true;
+                    break;
+                }
+                
+                count -= 1;
+            }
+        }
+
+        let mut max_room_id = 0;
+
+        for y in 0..max_grid_y
+        {
+            for x in 0..max_grid_x
+            {
+                if grid_x[x] && grid_y[y]
+                {
+                    let r = Room::new(max_room_id, x as u16 * max_room_width, y as u16 * max_room_height,
+                         max_room_width - 1, max_room_height - 1);
+                    max_room_id += 1;
+
+                    self.rooms.push(r);
+                }
+            }
+        }
+    }
+
     /// Generates a dungeon
     /// * 'max_rooms' - Number of rooms to generate in the dungeon
     /// * 'max_dungeon_width' - Max. dungeon width in internal units
@@ -139,44 +188,56 @@ impl Dungeon
         {
             return Err("Room size mismatch dungeon size!".to_string());
         }
+        if max_room_width < 3 || max_room_height < 3
+        {
+            return Err("Room size too small (less than three)!".to_string());
+        }
 
         let mut max_room_id = 0;
 
         let mut rng = thread_rng();
         
         //Create empty rooms
-        for _ in 0 .. max_rooms
+
+        if dungeon_type == DungeonType::Grid
         {
-            let mut max_loop = 10;
-
-            while max_loop > 0
+            self.generate_grid_rooms(max_rooms, max_dungeon_width, max_dungeon_height, max_room_width, max_room_height);
+        }
+        else
+        {
+            for _ in 0 .. max_rooms
             {
-                let x: u16 = rng.gen_range(1..max_dungeon_width - max_room_width - 1);
-                let y: u16 = rng.gen_range(1..max_dungeon_height - max_room_height - 1);
-                let w: u16 = rng.gen_range(2..max_room_width);
-                let h: u16 = rng.gen_range(2..max_room_height);
-
-                const ROOM_SPACE: i16 = 3;
-
-                let r = Room::new(max_room_id, x, y, w, h);
-                let r2 = if dungeon_type == DungeonType::SeparateRooms && x as i16 - ROOM_SPACE >= 0 && y as i16 - ROOM_SPACE >= 0
+                let mut max_loop = 10;
+    
+                while max_loop > 0
                 {
-                    Room::new(max_room_id, x - ROOM_SPACE as u16, y - ROOM_SPACE as u16, w + 3, h + 3)
+                    let x: u16 = rng.gen_range(1..max_dungeon_width - max_room_width - 1);
+                    let y: u16 = rng.gen_range(1..max_dungeon_height - max_room_height - 1);
+                    let w: u16 = rng.gen_range(2..max_room_width);
+                    let h: u16 = rng.gen_range(2..max_room_height);
+    
+                    const SPACE_BETWEEN_ROOMS: i16 = 3;
+    
+                    let r = Room::new(max_room_id, x, y, w, h);
+                    let r2 = if dungeon_type == DungeonType::SeparateRooms && x as i16 - SPACE_BETWEEN_ROOMS >= 0 && y as i16 - SPACE_BETWEEN_ROOMS >= 0
+                    {
+                        Room::new(max_room_id, x - SPACE_BETWEEN_ROOMS as u16, y - SPACE_BETWEEN_ROOMS as u16, w + 3, h + 3)
+                    }
+                    else
+                    {
+                        r.clone()
+                    };    
+    
+                    if !self.is_intersect_with_another_room(&r2)
+                    {
+                        self.rooms.push(r2);
+                        max_room_id += 1;                            
+                        break;
+                    }
+    
+                    max_loop -= 1;
                 }
-                else
-                {
-                    r.clone()
-                };    
-
-                if self.is_intersect_with_another_room(&r2) == false
-                {
-                    self.rooms.push(r);
-                    max_room_id += 1;                            
-                    break;
-                }
-
-                max_loop -= 1;
-            }
+            }    
         }
 
         let rooms_number = self.get_rooms_number();
@@ -208,7 +269,7 @@ impl Dungeon
                     max_corridor_id += 1;        
                 }
             }
-            else if dungeon_type == DungeonType::SeparateRooms
+            else if dungeon_type == DungeonType::SeparateRooms || dungeon_type == DungeonType::Grid
             {
                 for i in 0..(rooms_number as isize) - 1
                 {

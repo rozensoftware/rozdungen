@@ -1,7 +1,13 @@
 # Rozdungen
 
 ![dungeon pic 1](https://github.com/rozensoftware/rozdungen/blob/master/dungeon.png)
+Schema without decorations
 ![dungeon pic 2](https://github.com/rozensoftware/rozdungen/blob/master/dungeon2.png)
+Dungeon with keys, doors and chests
+![dungeon pic 3](https://github.com/rozensoftware/rozdungen/blob/master/dungeon3.png)
+Dungeon type grid
+
+## Brief
 
 Rozdungenlib is a library for generating simple dungeons. Chambers are filled with items, monsters and other data you can use for building your own dungeon. Two generation modes are available: 
 
