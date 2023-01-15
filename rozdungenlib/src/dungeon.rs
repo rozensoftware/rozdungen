@@ -155,10 +155,8 @@ impl Dungeon
 
         let mut max_room_id = 0;
 
-        for y in 0..max_grid_y
-        {
-            for x in 0..max_grid_x
-            {
+        (0..max_grid_y).for_each(|y| {
+            (0..max_grid_x).for_each(|x| {
                 if grid_x[x] && grid_y[y]
                 {
                     let r = Room::new(max_room_id, x as u16 * max_room_width, y as u16 * max_room_height,
@@ -167,8 +165,8 @@ impl Dungeon
 
                     self.rooms.push(r);
                 }
-            }
-        }
+            });
+        });
     }
 
     /// Generates a dungeon
