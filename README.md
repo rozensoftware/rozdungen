@@ -14,7 +14,7 @@ Dungeon type grid
 
 ## Brief
 
-Rozdungenlib is a library for generating simple dungeons. Chambers are filled with items, monsters and other data you can use for building your own dungeon. Two generation modes are available: 
+Rozdungenlib is a library for generating simple dungeons. Chambers are filled with items, monsters and other data you can use for building your own dungeon. Below are generation type modes: 
 
 ```
 DungeonType::Basement, DungeonType::Grid and DungeonType::SeparateRooms.
