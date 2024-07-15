@@ -75,7 +75,7 @@ The library must be added to your project (currently there is no version that ca
 
 ## Project future
 
-The library will be expanded in future. The plan is to add some of the following features:
+The plan is to add some of the following features:
 
 - Interior decoration of chambers
 - Monsters
